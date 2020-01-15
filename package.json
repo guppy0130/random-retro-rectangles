@@ -1,0 +1,33 @@
+{
+  "name": "random-retro-rectangles",
+  "version": "0.0.1",
+  "description": "Pretty, generative wallpapers.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "lint": "eslint ./",
+    "lint:fix": "eslint --fix ./",
+    "test": "mocha",
+    "test:watch": "mocha -w --reporter min"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "eslint": "^6.8.0",
+    "mocha": "^7.0.0"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guppy0130/random-retro-rectangles.git"
+  },
+  "bugs": {
+    "url": "https://github.com/guppy0130/random-retro-rectangles/issues"
+  },
+  "homepage": "https://github.com/guppy0130/random-retro-rectangles#readme"
+}
