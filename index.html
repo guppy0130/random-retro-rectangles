@@ -29,16 +29,17 @@
                             <p>Describes how many squares are used.</p>
                             <hr>
 
-                            <b-field label="canvasWidth">
-                                <b-slider v-model="canvasWidth" size="is-medium" lazy :min="2" :max="3000"></b-slider>
+                            <b-field label="Canvas">
+                                <b-field grouped expanded>
+                                    <b-field expanded>
+                                        <b-input v-model="canvasWidth" type="number" min="2" max="3000"></b-input>
+                                    </b-field>
+                                    <p class="control">x</p>
+                                    <b-field expanded>
+                                        <b-input v-model="canvasHeight" type="number" min="2" max="3000"></b-input>
+                                    </b-field>
+                                </b-field>
                             </b-field>
-                            <p>Describes how wide the final image is.</p>
-                            <hr>
-
-                            <b-field label="canvasHeight">
-                                <b-slider v-model="canvasHeight" size="is-medium" lazy :min="2" :max="3000"></b-slider>
-                            </b-field>
-                            <p>Describes how tall the final image is.</p>
                             <hr>
 
                             <b-field label="Merge Factor">
@@ -65,6 +66,9 @@
                             <hr>
 
                             <b-button @click="getImage" class="is-success">Get image</b-button>
+                            <a id="save-button" download="random-retro-rectangles.png">
+                                <b-button @click="saveImage" class="is-info" :disabled="!svg">Save image</b-button>
+                            </a>
                         </section>
                     </div>
                     <div class="column">
@@ -128,7 +132,9 @@
                     enableBackgroundColor: false,
                     backgroundColor: '#01172F',
                     transform: true,
-                    colors: []
+                    colors: [],
+                    svg: false,
+                    saved: false
                 },
                 methods: {
                     getImage() {
@@ -139,7 +145,6 @@
                             },
                             body: this.renderedString
                         }).then((response) => {
-                            // blob the response out if it's ok
                             if (response.ok && response.status === 200) {
                                 return response.text();
                             } else {
@@ -154,8 +159,10 @@
                             }
                             // add self
                             elem.innerHTML = svg;
+                            this.svg = svg
                             // and set class
                             elem.firstElementChild.classList.add('has-ratio');
+                            this.saved = false;
                         }).catch((err) => {
                             this.$buefy.snackbar.open({
                                 type: 'is-danger',
@@ -163,15 +170,36 @@
                                 indefinite: true
                             });
                         });
+                    },
+                    saveImage() {
+                        let imgContainer = document.getElementById('image');
+
+                        let imgElem = document.createElement('img');
+                        imgElem.setAttribute('src', `data:image/svg+xml;base64,${btoa(this.svg)}`);
+
+                        window.requestAnimationFrame(() => {
+                            let canvasElem = document.createElement('canvas');
+                            canvasElem.width = this.canvasWidth;
+                            canvasElem.height = this.canvasHeight;
+                            let ctx = canvasElem.getContext('2d');
+                            ctx.drawImage(imgElem, 0, 0);
+
+                            document.getElementById('save-button').href = canvasElem.toDataURL('image/png');
+                            if (!this.saved) {
+                                document.getElementById('save-button').click();
+                                this.saved = true;
+                            }
+                        });
+
                     }
                 },
                 computed: {
                     renderedString() {
                         data = {
-                            density: this.density,
-                            canvasWidth: this.canvasWidth,
-                            canvasHeight: this.canvasHeight,
-                            p: this.p,
+                            density: parseInt(this.density),
+                            canvasWidth: parseInt(this.canvasWidth),
+                            canvasHeight: parseInt(this.canvasHeight),
+                            p: parseInt(this.p),
                             transform: this.transform,
                         };
                         data['backgroundColor'] = this.enableBackgroundColor ? this.backgroundColor : false;
