@@ -2,6 +2,8 @@
 
 ## Pretty, generative wallpapers
 
+[![Build Status](https://travis-ci.com/guppy0130/random-retro-rectangles.svg?branch=master)](https://travis-ci.com/guppy0130/random-retro-rectangles)
+
 ```bash
 git clone https://github.com/guppy0130/random-retro-rectangles.git
 npm i
