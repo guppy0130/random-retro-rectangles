@@ -26,6 +26,8 @@ app.use(bodyParser.json());
 // template engine
 app.engine('.html', whiskers.__express);
 app.set('views', __dirname);
+// heroku
+app.enable('trust proxy');
 
 // some defaults so buildMagicObj doesn't break.
 // also, backgroundColor
