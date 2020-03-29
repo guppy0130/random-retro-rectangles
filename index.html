@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/styles/github.min.css">
+        <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/verte@0.0.12/dist/verte.css">
+        <title>Random Retro Rectangles</title>
+    </head>
+
+    <body>
+        <div id="app" style="margin: 1em 32px">
+            <b-navbar class="container" spaced :mobile-burger="false">
+                <template slot="brand">
+                    <b-navbar-item>
+                        <p>Random Retro Rectangles</p>
+                    </b-navbar-item>
+                </template>
+            </b-navbar>
+
+            <div class="container">
+                <div class="columns">
+                    <div class="column">
+                        <section>
+                            <b-field label="Density">
+                                <b-slider v-model="density" size="is-medium" lazy :min="1" :max="100"></b-slider>
+                            </b-field>
+                            <p>Describes how many squares are used.</p>
+                            <hr>
+
+                            <b-field label="canvasWidth">
+                                <b-slider v-model="canvasWidth" size="is-medium" lazy :min="2" :max="3000"></b-slider>
+                            </b-field>
+                            <p>Describes how wide the final image is.</p>
+                            <hr>
+
+                            <b-field label="canvasHeight">
+                                <b-slider v-model="canvasHeight" size="is-medium" lazy :min="2" :max="3000"></b-slider>
+                            </b-field>
+                            <p>Describes how tall the final image is.</p>
+                            <hr>
+
+                            <b-field label="Merge Factor">
+                                <b-slider v-model="p" size="is-medium" lazy :min="1" :max="100" :step="1"></b-slider>
+                            </b-field>
+                            <p>Smaller = more merging</p>
+                            <hr>
+
+                            <b-field grouped expanded>
+                                <b-field label="backgroundColor" expanded>
+                                    <b-field grouped>
+                                        <b-switch v-model="enableBackgroundColor"></b-switch>
+                                        <verte v-model="backgroundColor" picker="square" model="hex" menu-position="center" :value="backgroundColor"></verte>
+
+
+                                    </b-field>
+                                </b-field>
+
+                                <b-field label="Rotate" expanded>
+                                    <b-switch v-model="transform"></b-switch>
+                                </b-field>
+                            </b-field>
+
+                            <hr>
+
+                            <b-button @click="getImage" class="is-success">Get image</b-button>
+                        </section>
+                    </div>
+                    <div class="column">
+                        <section>
+                            <pre v-highlightjs="source">
+                                <code class="http">
+                                </code>
+                            </pre>
+                        </section>
+                        <section>
+                            <figure class="image is-16by9" id="image"></figure>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="//unpkg.com/vue"></script>
+        <script src="//unpkg.com/buefy/dist/buefy.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/highlight.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/languages/http.min.js"></script>
+        <script src="//cdn.jsdelivr.net/npm/verte"></script>
+
+        <script>
+            hljs.initHighlightingOnLoad();
+
+            Vue.directive('highlightjs', {
+                deep: true,
+                bind: function (el, binding) {
+                    // on first bind, highlight all targets
+                    let targets = el.querySelectorAll('code')
+                    targets.forEach((target) => {
+                    // if a value is directly assigned to the directive, use this
+                    // instead of the element content.
+                        if (binding.value) {
+                            target.textContent = binding.value
+                        }
+                        hljs.highlightBlock(target)
+                    })
+                },
+                componentUpdated: function (el, binding) {
+                    // after an update, re-fill the content and then highlight
+                    let targets = el.querySelectorAll('code')
+                    targets.forEach((target) => {
+                        if (binding.value) {
+                            target.textContent = binding.value
+                            hljs.highlightBlock(target)
+                        }
+                    })
+                }
+            });
+            Vue.component('verte', Verte);
+
+            const vue = new Vue({
+                el: '#app',
+                data: {
+                    density: 16,
+                    canvasWidth: 1600,
+                    canvasHeight: 900,
+                    p: 10,
+                    enableBackgroundColor: false,
+                    backgroundColor: '#01172F',
+                    transform: true,
+                    colors: []
+                },
+                methods: {
+                    getImage() {
+                        fetch('{url}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: this.renderedString
+                        }).then((response) => {
+                            // blob the response out if it's ok
+                            if (response.ok && response.status === 200) {
+                                return response.text();
+                            } else {
+                                throw new Error('Cannot reach server');
+                            }
+                        }).then((svg) => {
+                            // add the svg to the page
+                            let elem = document.getElementById('image');
+                            // remove all children
+                            while (elem.childNodes.length > 0) {
+                                elem.removeChild(elem.childNodes[0]);
+                            }
+                            // add self
+                            elem.innerHTML = svg;
+                            // and set class
+                            elem.firstElementChild.classList.add('has-ratio');
+                        }).catch((err) => {
+                            this.$buefy.snackbar.open({
+                                type: 'is-danger',
+                                message: err.message,
+                                indefinite: true
+                            });
+                        });
+                    }
+                },
+                computed: {
+                    renderedString() {
+                        data = {
+                            density: this.density,
+                            canvasWidth: this.canvasWidth,
+                            canvasHeight: this.canvasHeight,
+                            p: this.p,
+                            transform: this.transform,
+                        };
+                        data['backgroundColor'] = this.enableBackgroundColor ? this.backgroundColor : false;
+                        return JSON.stringify(data, null, 4);
+                    },
+                    source() {
+                        return `POST / HTTP/1.1
+Host: {url}
+Content-Type: application/json; charset=utf-8
+Content-Length: ${ this.renderedString.length }
+
+${ this.renderedString }`;
+                    },
+                }
+            });
+        </script>
+    </body>
+</html>
