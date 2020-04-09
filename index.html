@@ -6,6 +6,7 @@
         <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/styles/github.min.css">
         <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/verte@0.0.12/dist/verte.css">
+        <link rel="stylesheet" href="https://cdn.materialdesignicons.com/2.0.46/css/materialdesignicons.min.css">
         <title>Random Retro Rectangles</title>
     </head>
 
@@ -23,12 +24,13 @@
                 <div class="columns">
                     <div class="column">
                         <section>
+                            <!-- Density -->
                             <b-field label="Density">
                                 <b-slider v-model="density" size="is-medium" lazy :min="1" :max="100"></b-slider>
                             </b-field>
                             <p>Describes how many squares are used.</p>
                             <hr>
-
+                            <!-- Canvas -->
                             <b-field label="Canvas">
                                 <b-field grouped expanded>
                                     <b-field expanded>
@@ -41,20 +43,18 @@
                                 </b-field>
                             </b-field>
                             <hr>
-
+                            <!-- Merge Factor -->
                             <b-field label="Merge Factor">
                                 <b-slider v-model="p" size="is-medium" lazy :min="1" :max="100" :step="1"></b-slider>
                             </b-field>
                             <p>Smaller = more merging</p>
                             <hr>
-
+                            <!-- Background Color + toggle -->
                             <b-field grouped expanded>
                                 <b-field label="backgroundColor" expanded>
                                     <b-field grouped>
                                         <b-switch v-model="enableBackgroundColor"></b-switch>
                                         <verte v-model="backgroundColor" picker="square" model="hex" menu-position="center" :value="backgroundColor"></verte>
-
-
                                     </b-field>
                                 </b-field>
 
@@ -62,9 +62,19 @@
                                     <b-switch v-model="transform"></b-switch>
                                 </b-field>
                             </b-field>
-
                             <hr>
-
+                            <!-- Colors -->
+                            <b-field label="Colors">
+                                <b-field grouped expanded>
+                                    <b-field v-for="(color, index) in colors" :key="index">
+                                        <verte v-model="colors[index].fill" picker="square" model="hex" menu-position="center" @hook:mounted="verteClick()" ref="verte"></verte>
+                                    </b-field>
+                                </b-field>
+                            </b-field>
+                            <b-button @click="colors.push({fill: '#000000'});" icon-right="plus" type="is-success" class="is-right"></b-button>
+                            <b-button @click="colors.pop()" icon-right="minus" type="is-danger"></b-button>
+                            <hr>
+                            <!-- Buttons -->
                             <b-button @click="getImage" class="is-success">Get image</b-button>
                             <a id="save-button" download="random-retro-rectangles.png">
                                 <b-button @click="saveImage" class="is-info" :disabled="!svg">Save image</b-button>
@@ -73,13 +83,13 @@
                     </div>
                     <div class="column">
                         <section>
+                            <figure class="image is-16by9" id="image"></figure>
+                        </section>
+                        <section>
                             <pre v-highlightjs="source">
                                 <code class="http">
                                 </code>
                             </pre>
-                        </section>
-                        <section>
-                            <figure class="image is-16by9" id="image"></figure>
                         </section>
                     </div>
                 </div>
@@ -120,7 +130,77 @@
                     })
                 }
             });
-            Vue.component('verte', Verte);
+
+            function splitComplementary(angle, delta) {
+                if (delta >= 180) {
+                    delta = 180 - delta;
+                }
+                return [(angle + delta) % 360, (angle - delta) % 360, (angle + 180) % 360];
+            }
+
+            function HSLToHex(h,s,l) {
+                s /= 100;
+                l /= 100;
+
+                let c = (1 - Math.abs(2 * l - 1)) * s,
+                x = c * (1 - Math.abs((h / 60) % 2 - 1)),
+                m = l - c/2,
+                r = 0,
+                g = 0,
+                b = 0;
+
+                if (0 <= h && h < 60) {
+                    r = c; g = x; b = 0;
+                } else if (60 <= h && h < 120) {
+                    r = x; g = c; b = 0;
+                } else if (120 <= h && h < 180) {
+                    r = 0; g = c; b = x;
+                } else if (180 <= h && h < 240) {
+                    r = 0; g = x; b = c;
+                } else if (240 <= h && h < 300) {
+                    r = x; g = 0; b = c;
+                } else if (300 <= h && h < 360) {
+                    r = c; g = 0; b = x;
+                }
+                // Having obtained RGB, convert channels to hex
+                r = Math.round((r + m) * 255).toString(16);
+                g = Math.round((g + m) * 255).toString(16);
+                b = Math.round((b + m) * 255).toString(16);
+
+                // Prepend 0s, if necessary
+                if (r.length == 1) {
+                    r = "0" + r;
+                }
+                if (g.length == 1) {
+                    g = "0" + g;
+                }
+                if (b.length == 1) {
+                    b = "0" + b;
+                }
+
+                return "#" + r + g + b;
+            }
+
+            function getBetween(min, max) {
+                return Math.random() * (max - min) + min;
+            }
+
+            function colorGenerator() {
+                let angle = Math.random() * 360;
+                let s = getBetween(25, 100);
+                let l = getBetween(40, 90);
+                return splitComplementary(angle, 20).map(h => HSLToHex(h, s, l));
+            }
+
+            // set up some nice colors based on magic color theory
+            localStorage.setItem('colors', JSON.stringify(colorGenerator().concat(colorGenerator())));
+
+            Vue.use(Verte, {
+                recentColors: JSON.parse(localStorage.getItem('colors')),
+                onRecentColorsChange(colors) {
+                    localStorage.setItem('colors', JSON.stringify(colors));
+                }
+            });
 
             const vue = new Vue({
                 el: '#app',
@@ -190,7 +270,12 @@
                                 this.saved = true;
                             }
                         });
-
+                    },
+                    verteClick() {
+                        // wrap it in a requestAnimationFrame so we know it's rendered
+                        requestAnimationFrame(() => {
+                            this.$refs.verte.slice(-1).pop().openMenu();
+                        });
                     }
                 },
                 computed: {
@@ -201,6 +286,7 @@
                             canvasHeight: parseInt(this.canvasHeight),
                             p: parseInt(this.p),
                             transform: this.transform,
+                            colors: this.colors
                         };
                         data['backgroundColor'] = this.enableBackgroundColor ? this.backgroundColor : false;
                         return JSON.stringify(data, null, 4);

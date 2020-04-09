@@ -64,8 +64,6 @@ app.post('/', async (req, res) => {
         p === undefined ||
         p <= 0) {
         return res.status(400).send('Bad params');
-    } else if (colors == null) {
-        colors = [];
     }
 
     // just pass a density since we're always making squares
@@ -82,7 +80,9 @@ app.post('/', async (req, res) => {
     fillGrid(grid, p, width, height);
 
     // add more colors!
-    colors = colors.concat(prebuiltColors);
+    if (colors == null || colors.length === 0) {
+        colors = prebuiltColors;
+    }
 
     if (backgroundColor) {
         colors.push({
