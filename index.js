@@ -232,7 +232,7 @@ const buildMagicObj = async (grid, canvasWidth, canvasHeight, colors, background
         g['$'] = {
             width: Math.max(canvasWidth, canvasHeight) * factor,
             height: Math.max(canvasWidth, canvasHeight) * factor,
-            transform: `rotate(45) translate(-${Math.max(canvasWidth, canvasHeight) / 2} -${Math.max(canvasWidth, canvasHeight) / 2})`,
+            transform: `rotate(45 ${canvasWidth / 2} ${canvasHeight / 2}) translate(-${canvasWidth / 2} -${canvasHeight / 2})`,
             'transform-origin': 'center'
         };
     }
