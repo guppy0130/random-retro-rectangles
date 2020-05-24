@@ -46,13 +46,27 @@ for (let i = 0; i < someColors.length; i++) {
  * Shuffles array in place.
  * @param {Array} a items An array containing the items.
  */
-function shuffle(a) {
+const shuffle = (a) => {
     for (let i = a.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
-}
+};
+
+/**
+ * Generate the grid, filled in. This is abstracted out for different consumers.
+ */
+const getMagicObj = async (p, width, height, canvasWidth, canvasHeight, colors, backgroundColor, transform, factor) => {
+    // generate grid
+    p = 1 / p;
+    let grid = gridGenerator([], width, height);
+    fillGrid(grid, p, width, height);
+
+    colors = shuffle(colors);
+
+    return await buildMagicObj(grid, canvasWidth, canvasHeight, colors, backgroundColor, transform, factor);
+};
 
 app.post('/', async (req, res) => {
     let { density, canvasWidth, canvasHeight, colors, p, backgroundColor, transform } = req.body;
@@ -74,26 +88,12 @@ app.post('/', async (req, res) => {
     let width = density * factor;
     let height = density * factor;
 
-    // generate grid
-    p = 1 / p;
-    let grid = gridGenerator([], width, height);
-    fillGrid(grid, p, width, height);
-
     // add more colors!
     if (colors == null || colors.length === 0) {
         colors = prebuiltColors;
     }
 
-    if (backgroundColor) {
-        colors.push({
-            'fill': backgroundColor,
-            'stroke': backgroundColor
-        });
-    }
-
-    colors = shuffle(colors);
-
-    const svgObj = await buildMagicObj(grid, canvasWidth, canvasHeight, colors, backgroundColor, transform, factor);
+    let svgObj = await getMagicObj(p, width, height, canvasWidth, canvasHeight, colors, backgroundColor, transform, factor);
     let svg = xmlBuilder.buildObject(svgObj);
     return res.send(svg);
 });
