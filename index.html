@@ -259,6 +259,7 @@
                             reader.readAsDataURL(image);
                             this.requestComplete = true;
                         }).catch((err) => {
+                            this.loading = false;
                             this.$buefy.snackbar.open({
                                 type: 'is-danger',
                                 message: err.message,
