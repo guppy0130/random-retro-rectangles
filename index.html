@@ -77,15 +77,17 @@
                             <!-- Buttons -->
                             <b-button @click="getImage" class="is-success">Get image</b-button>
                             <a id="save-button" download="random-retro-rectangles.png">
-                                <b-button @click="saveImage" class="is-info" :disabled="!svg">Save image</b-button>
+                                <b-button class="is-info" :disabled="!requestComplete">Save image</b-button>
                             </a>
                         </section>
                     </div>
                     <div class="column">
                         <section>
+                            <!-- Image -->
                             <figure class="image is-16by9" id="image"></figure>
                         </section>
                         <section>
+                            <!-- Code -->
                             <pre v-highlightjs="source">
                                 <code class="http">
                                 </code>
@@ -213,12 +215,12 @@
                     backgroundColor: '#01172F',
                     transform: true,
                     colors: [],
-                    svg: false,
-                    saved: false
+                    requestComplete: false,
+                    base64: ""
                 },
                 methods: {
                     getImage() {
-                        fetch('{url}', {
+                        fetch('{url}png', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -226,49 +228,39 @@
                             body: this.renderedString
                         }).then((response) => {
                             if (response.ok && response.status === 200) {
-                                return response.text();
+                                return response.blob();
                             } else {
                                 throw new Error('Cannot reach server');
                             }
-                        }).then((svg) => {
-                            // add the svg to the page
+                        }).then((image) => {
+                            // add the png to the page
                             let elem = document.getElementById('image');
                             // remove all children
                             while (elem.childNodes.length > 0) {
                                 elem.removeChild(elem.childNodes[0]);
                             }
+                            elem.className = `is-${this.canvasWidth}x${this.canvasHeight}`;
                             // add self
-                            elem.innerHTML = svg;
-                            this.svg = svg
+                            let img = document.createElement('img');
+                            img.src = URL.createObjectURL(image);
+                            elem.appendChild(img);
                             // and set class
-                            elem.firstElementChild.classList.add('has-ratio');
-                            this.saved = false;
+                            img.classList.add('has-ratio');
+                            img.id = 'new-image';
+                            // set base64 too
+                            let reader = new FileReader();
+                            reader.onloadend = () => {
+                                this.base64 = reader.result;
+                                document.getElementById('save-button').href = this.base64;
+                            };
+                            reader.readAsDataURL(image);
+                            this.requestComplete = true;
                         }).catch((err) => {
                             this.$buefy.snackbar.open({
                                 type: 'is-danger',
                                 message: err.message,
                                 indefinite: true
                             });
-                        });
-                    },
-                    saveImage() {
-                        let imgContainer = document.getElementById('image');
-
-                        let imgElem = document.createElement('img');
-                        imgElem.setAttribute('src', `data:image/svg+xml;base64,${btoa(this.svg)}`);
-
-                        window.requestAnimationFrame(() => {
-                            let canvasElem = document.createElement('canvas');
-                            canvasElem.width = this.canvasWidth;
-                            canvasElem.height = this.canvasHeight;
-                            let ctx = canvasElem.getContext('2d');
-                            ctx.drawImage(imgElem, 0, 0);
-
-                            document.getElementById('save-button').href = canvasElem.toDataURL('image/png');
-                            if (!this.saved) {
-                                document.getElementById('save-button').click();
-                                this.saved = true;
-                            }
                         });
                     },
                     verteClick() {
@@ -292,7 +284,7 @@
                         return JSON.stringify(data, null, 4);
                     },
                     source() {
-                        return `POST / HTTP/1.1
+                        return `POST /png HTTP/1.1
 Host: {url}
 Content-Type: application/json; charset=utf-8
 Content-Length: ${ this.renderedString.length }

@@ -169,40 +169,51 @@ const buildMagicObj = async (grid, canvasWidth, canvasHeight, colors, background
             let normalizedHeight = size;
             let margin = size / 40;
             let color = colors[(grid[i][j]) % colors.length].fill;
-            let baseRectangle = (x, y) => {
-                return {
+            /**
+             * a basic rectangle
+             * @param {Number} x x-coord
+             * @param {Number} y y-coord
+             * @param {boolean} round if rounded corners are enabled
+             */
+            let baseRectangle = (x, y, round) => {
+                let rect = {
                     'width': normalizedWidth - margin * 3,
                     'height': normalizedHeight - margin * 3,
                     'x': normalizedWidth * (i + x) + margin,
                     'y': normalizedHeight * (j + y) + margin,
                     'fill': color,
                     // 'stroke': colors[grid[i][j] - 1].stroke,
-                    'rx': margin * 10,
-                    'ry': margin * 10
                 };
+                if (round) {
+                    rect = Object.assign(rect, {
+                        'rx': margin * 10,
+                        'ry': margin * 10
+                    });
+                }
+                return rect;
             };
             rectangles.push({
-                '$': baseRectangle(0, 0)
+                '$': baseRectangle(0, 0, true)
             });
             // add more rectangles for merging
 
             // south
             if (canMove.south(grid, i, j) && grid[i][j + 1] == grid[i][j]) {
                 rectangles.push({
-                    '$': baseRectangle(0, 0.5)
+                    '$': baseRectangle(0, 0.5, false)
                 });
             }
             // east
             if (canMove.east(grid, i, j) && grid[i + 1][j] == grid[i][j]) {
                 rectangles.push({
-                    '$': baseRectangle(0.5, 0)
+                    '$': baseRectangle(0.5, 0, false)
                 });
             }
             // and in the all direction case?
             // so it has south, east, and southeast.
             if (canMove.east(grid, i, j) && canMove.south(grid, i, j) && canMove.east(grid, i, j+1) && grid[i+1][j] == grid[i][j] && grid[i][j+1] == grid[i][j] && grid[i+1][j+1] == grid[i][j]) {
                 rectangles.push({
-                    '$': baseRectangle(0.25, 0.25)
+                    '$': baseRectangle(0.25, 0.25, false)
                 });
             }
         }
