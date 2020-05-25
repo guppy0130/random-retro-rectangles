@@ -75,7 +75,7 @@
                             <b-button @click="colors.pop()" icon-right="minus" type="is-danger"></b-button>
                             <hr>
                             <!-- Buttons -->
-                            <b-button @click="getImage" class="is-success">Get image</b-button>
+                            <b-button @click="getImage" class="is-success" :loading="loading">Get image</b-button>
                             <a id="save-button" download="random-retro-rectangles.png">
                                 <b-button class="is-info" :disabled="!requestComplete">Save image</b-button>
                             </a>
@@ -207,7 +207,7 @@
             const vue = new Vue({
                 el: '#app',
                 data: {
-                    density: 16,
+                    density: 10,
                     canvasWidth: 1600,
                     canvasHeight: 900,
                     p: 10,
@@ -216,10 +216,12 @@
                     transform: true,
                     colors: [],
                     requestComplete: false,
-                    base64: ""
+                    base64: "",
+                    loading: false
                 },
                 methods: {
                     getImage() {
+                        this.loading = true;
                         fetch('{url}png', {
                             method: 'POST',
                             headers: {
@@ -227,6 +229,7 @@
                             },
                             body: this.renderedString
                         }).then((response) => {
+                            this.loading = false;
                             if (response.ok && response.status === 200) {
                                 return response.blob();
                             } else {
